@@ -3,11 +3,13 @@ import platform
 import socket
 import struct
 import subprocess
+import time
 from pathlib import Path
 from socket import *
 from typing import cast
 
 import config
+from model.utils import delete_temp_folder
 
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 
@@ -223,11 +225,12 @@ class QidiPrinter():
         return self.socket_send(command, t=None)
 
     def compress_gcode(self, gcode_path):
+        delete_temp_folder()
         cfg = self.config
         cmd = f'"{os.path.normpath(self.vc_compress)}" "{gcode_path}" {cfg["x_mm_step"]} ' \
               f'{cfg["y_mm_step"]} {cfg["z_mm_step"]} {cfg["e_mm_step"]} {config.GCODE_TEMP_PATH} ' \
               f'{cfg["s_x_max"]} {cfg["s_y_max"]} {cfg["s_z_max"]} {cfg["s_machine_type"]}'
-        print(cmd)
-        _ = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        p.communicate()
+        time.sleep(2)
         return os.path.exists(f"{self.temp_gcode}.tz")

@@ -1,4 +1,7 @@
+import shutil
 from socket import *
+
+from config import GCODE_TEMP_PATH
 
 
 def search_printer(retries=100):
@@ -18,9 +21,14 @@ def search_printer(retries=100):
             try:
                 s.sendto("M4001".encode('utf-8', 'ignore'), (printer_ip, 3000))
                 data, address = s.recvfrom(1280)
-                if all(x in data.decode('utf-8') for x in ["X","Y","Z","E"]):
+                if all(x in data.decode('utf-8') for x in ["X", "Y", "Z", "E"]):
                     return printer_ip
             except Exception:
                 continue
 
     return None
+
+
+def delete_temp_folder():
+    shutil.rmtree(GCODE_TEMP_PATH)
+    GCODE_TEMP_PATH.mkdir(exist_ok=True)

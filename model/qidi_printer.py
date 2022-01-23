@@ -55,7 +55,7 @@ class QidiPrinter():
         return data.decode('utf-8')
 
     def init_printer_config(self):
-        msg = self.socket_send("M4001")
+        msg = self.send_gcode_command("M4001")
         msg = msg.rstrip()
         msgs = msg.split(' ')
         config = {}
@@ -84,7 +84,7 @@ class QidiPrinter():
         return config
 
     def is_available(self, t=5):
-        return "x_mm_step" in self.socket_send("M4001", t=t)
+        return "x_mm_step" in self.send_gcode_command("M4001", t=t)
 
     def add_check_sum(self, data, seekPos):
         seek_array = struct.pack('>I', seekPos)
@@ -125,7 +125,7 @@ class QidiPrinter():
         return self.socket_send(data)
 
     def write_file_start(self, gcode_path):
-        return self.socket_send(f'M28 {Path(gcode_path).name}')
+        return self.send_gcode_command(f'M28 {Path(gcode_path).name}')
 
     def write_file(self, gcode_path):
         with open(Path(config.GCODE_TEMP_PATH, Path(gcode_path).name + ".tz"), 'rb') as fp:
@@ -139,7 +139,7 @@ class QidiPrinter():
         fp.close()
 
     def write_file_end(self, gcode_path):
-        return self.socket_send(f"M29 {Path(gcode_path).name}")
+        return self.send_gcode_command(f"M29 {Path(gcode_path).name}")
 
     def upload_gcode(self, gcode_path, start_print=False):
         self.compress_gcode(gcode_path)
@@ -150,79 +150,82 @@ class QidiPrinter():
             self.start_print(Path(gcode_path).name)
 
     def get_current_position(self):
-        return self.socket_send('M114')
+        return self.send_gcode_command('M114')
 
     def get_firmware_info(self):
-        return self.socket_send('M115')
+        return self.send_gcode_command('M115')
 
     def printer_shutdown(self):
-        self.socket_send('M4003')
+        self.send_gcode_command('M4003')
 
     def printer_light_off(self):
-        self.socket_send('M107 T-3')
+        self.send_gcode_command('M107 T-3')
 
     def printer_light_on(self):
-        self.socket_send('M106 S255 T-3')
+        self.send_gcode_command('M106 S255 T-3')
 
     def printer_emergency_stop(self):
-        self.socket_send('M112')
+        self.send_gcode_command('M112')
 
     def start_print(self, gcode):
-        self.socket_send(f'M6030 ":{gcode}" I1')
+        self.send_gcode_command(f'M6030 ":{gcode}" I1')
 
     def pause_print(self):
-        self.socket_send("M25")
+        self.send_gcode_command("M25")
 
     def resume_print(self):
-        self.socket_send("M24")
+        self.send_gcode_command("M24")
 
     def cancel_print(self):
-        self.socket_send("M33")
+        self.send_gcode_command("M33")
 
     def home_all(self):
-        self.socket_send("G28", t=60)
+        self.send_gcode_command("G28", t=60)
 
     def home_x(self):
-        self.socket_send("G28 X", t=60)
+        self.send_gcode_command("G28 X", t=60)
 
     def home_y(self):
-        self.socket_send("G28 Y", t=60)
+        self.send_gcode_command("G28 Y", t=60)
 
     def home_z(self):
-        self.socket_send("G28 Z", t=60)
+        self.send_gcode_command("G28 Z", t=60)
 
     def home_xy(self):
-        self.socket_send("G28 X Y", t=60)
+        self.send_gcode_command("G28 X Y", t=60)
 
     def move_left(self, amount=10, speed=1500):
         self.set_relative_positioning()
-        self.socket_send(f"G0 X{-1 * amount} F{speed}", t=60)
+        self.send_gcode_command(f"G0 X{-1 * amount} F{speed}", t=60)
 
     def move_right(self, amount=10, speed=1500):
         self.set_relative_positioning()
-        self.socket_send(f"G0 X{amount} F{speed}", t=60)
+        self.send_gcode_command(f"G0 X{amount} F{speed}", t=60)
 
     def move_back(self, amount=10, speed=1500):
         self.set_relative_positioning()
-        self.socket_send(f"G0 Y{amount} F{speed}", t=60)
+        self.send_gcode_command(f"G0 Y{amount} F{speed}", t=60)
 
     def move_front(self, amount=10, speed=1500):
         self.set_relative_positioning()
-        self.socket_send(f"G0 Y{-1 * amount} F{speed}", t=60)
+        self.send_gcode_command(f"G0 Y{-1 * amount} F{speed}", t=60)
 
     def move_up(self, amount=10, speed=1500):
         self.set_relative_positioning()
-        self.socket_send(f"G0 Z{amount} F{speed}", t=60)
+        self.send_gcode_command(f"G0 Z{amount} F{speed}", t=60)
 
     def move_down(self, amount=10, speed=1500):
         self.set_relative_positioning()
-        self.socket_send(f"G0 Z{-1 * amount} F{speed}", t=60)
+        self.send_gcode_command(f"G0 Z{-1 * amount} F{speed}", t=60)
 
     def set_relative_positioning(self):
-        self.socket_send("G91")
+        self.send_gcode_command("G91")
 
-    def send_gcode_command(self, command):
-        return self.socket_send(command, t=None)
+    def send_gcode_command(self, command, t=None):
+        try:
+            return self.socket_send(command, t=t)
+        except Exception:
+            return False
 
     def compress_gcode(self, gcode_path):
         delete_temp_folder()

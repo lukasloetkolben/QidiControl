@@ -4,7 +4,7 @@ from socket import *
 from config import GCODE_TEMP_PATH
 
 
-def search_printer(retries=100):
+def search_printer(connection_screen,retries=2):
     pc_ip = gethostbyname(gethostname())
     timeout = 0
 
@@ -15,19 +15,18 @@ def search_printer(retries=100):
 
         for i in range(0, 255):
             printer_ip = pc_ip[:pc_ip.rfind('.') + 1] + str(i)
-
             s = socket(AF_INET, SOCK_DGRAM)
             s.settimeout(timeout)
             try:
                 s.sendto("M4001".encode('utf-8', 'ignore'), (printer_ip, 3000))
                 data, address = s.recvfrom(1280)
                 if all(x in data.decode('utf-8') for x in ["X", "Y", "Z", "E"]):
-                    return printer_ip
+                    connection_screen.printer_ip_found(printer_ip)
+                    return
             except Exception:
                 continue
 
-    return None
-
+    connection_screen.printer_ip_not_found()
 
 def delete_temp_folder():
     shutil.rmtree(GCODE_TEMP_PATH)

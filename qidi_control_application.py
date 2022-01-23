@@ -17,6 +17,8 @@ with open("factory_registers.json") as fd:
 class QidiControlApp(MDApp):
 
     def build(self):
+        self.theme_cls.primary_palette = "Teal"
+        self.theme_cls.theme_style = "Light"
         return QidiControlScreenManger()
 
 

@@ -153,8 +153,11 @@ class QidiPrinter():
     def get_firmware_info(self):
         return self.socket_send('M115')
 
-    def printer_turn_off(self):
+    def printer_shutdown(self):
         self.socket_send('M4003')
+
+    def printer_emergency_stop(self):
+        self.socket_send('M112')
 
     def start_print(self, gcode):
         self.socket_send(f'M6030 ":{gcode}" I1')
@@ -211,7 +214,7 @@ class QidiPrinter():
         self.socket_send("G91")
 
     def send_gcode_command(self, command):
-        self.socket_send(command, t=None)
+        return self.socket_send(command, t=None)
 
     def compress_gcode(self, gcode_path):
         cfg = self.config

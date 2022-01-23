@@ -13,7 +13,7 @@ Builder.load_string('''
             text: "Printer"
             font_style: "H4"
             halign: "center"
-            pos_hint:{'center_x':.5,'center_y':.8}
+            pos_hint:{'center_y':.8}
         
         MDBoxLayout:
             orientation: "horizontal"
@@ -25,7 +25,6 @@ Builder.load_string('''
                 hint_text: "Printers ip"
                 helper_text: "Input ip of your printer."
                 helper_text_mode: "on_focus"
-                on_text: root.ip_changed()
             
             MDIconButton:
                 icon: "cloud-search"
@@ -34,7 +33,7 @@ Builder.load_string('''
         MDFillRoundFlatIconButton:
             id: connect_button
             pos_hint:{'center_x':.5,'center_y':.3}
-            text: "connect"
+            text: "Connect"
             icon: "connection"      
             on_release: root.connect_clicked()
 ''')
@@ -60,12 +59,8 @@ class ConnectScreen(MDScreen):
 
         if self.printer.connect(self.ids.printer_ip_field.text):
             toast("Printer connected!")
-            self.ids.connect_button.disabled = True
             self.manager.get_screen("main_screen").printer = self.printer
             self.goto_main_screen()
         else:
             toast("Printer connection failed!")
-            self.ids.connect_button.disabled = False
 
-    def ip_changed(self):
-        self.ids.connect_button.disabled = False

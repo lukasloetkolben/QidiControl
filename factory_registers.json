@@ -4,5 +4,8 @@
   ],
   "view.components.control_panel": [
     "ControlPanel"
+  ],
+    "view.components.gcode_terminal": [
+    "GcodeTerminal"
   ]
 }

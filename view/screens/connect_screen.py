@@ -21,8 +21,8 @@ Builder.load_string('''
             MDTextField:
                 id: printer_ip_field
                 size_hint: (0.5, None)
-                hint_text: "Printers ip"
-                helper_text: "Input ip of your printer."
+                hint_text: "IP address"
+                helper_text: "Enter ip of your printer."
                 helper_text_mode: "on_focus"
             
             MDIconButton:

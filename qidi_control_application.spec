@@ -23,7 +23,7 @@ kivy_factory_modules = hooks.get_factory_modules()
 
 datas = [    (join('./', '*.json'), './')]
 # list of modules to exclude from analysis
-excludes_a = ['Tkinter', '_tkinter', 'twisted', 'docutils', 'pygments', '.git', '.idea']
+excludes_a = ['.git', '.idea']
 
 # list of hiddenimports
 hiddenimports = kivy_deps_all['hiddenimports'] + kivy_factory_modules + collect_submodules('kivymd') + collect_submodules('plyer')

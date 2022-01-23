@@ -4,7 +4,11 @@ import os
 from os.path import join
 
 
-
+from PyInstaller.utils.hooks import (
+    collect_data_files,
+    copy_metadata,
+    collect_submodules
+)
 from kivy import kivy_data_dir
 from kivy_deps import sdl2, glew
 from kivy.tools.packaging import pyinstaller_hooks as hooks
@@ -22,7 +26,7 @@ datas = [    (join('./', '*.json'), './')]
 excludes_a = ['Tkinter', '_tkinter', 'twisted', 'docutils', 'pygments', '.git', '.idea']
 
 # list of hiddenimports
-hiddenimports = kivy_deps_all['hiddenimports'] + kivy_factory_modules
+hiddenimports = kivy_deps_all['hiddenimports'] + kivy_factory_modules + collect_submodules('kivymd') + collect_submodules('plyer')
 
 # binary data
 sdl2_bin_tocs = [Tree(p) for p in sdl2.dep_bins]

@@ -1,5 +1,4 @@
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty
 from kivymd.toast import toast
 from kivymd.uix.screen import MDScreen
 
@@ -63,4 +62,3 @@ class ConnectScreen(MDScreen):
             self.goto_main_screen()
         else:
             toast("Printer connection failed!")
-

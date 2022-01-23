@@ -9,13 +9,14 @@ Builder.load_string('''
 <GcodeTerminal>:
     orientation: "vertical"
     ScrollView:
+        id: scroll_view
         size_hint: (1,1)
         canvas.before:
-            Color:
-                rgba: app.theme_cls.bg_dark
-            Rectangle:
-                pos: self.pos
-                size: self.size
+        Color:
+            rgba: app.theme_cls.bg_dark
+        Rectangle:
+            pos: self.pos
+            size: self.size
         MDList:
             id: gcode_list
             pos_hint: {'top':1}
@@ -33,8 +34,6 @@ Builder.load_string('''
         MDIconButton:
             icon: "send"
             on_release: root.send_gcode()
-
-
 ''')
 
 class GcodeTerminal(BoxLayout):
@@ -55,8 +54,11 @@ class GcodeTerminal(BoxLayout):
             self.append_gcode_list(text)
 
     def add_message(self, message):
+        message = f"[size=12]# {message}[/size]"
         self.ids.gcode_list.add_widget(
             OneLineListItem(
-                text=f"[size=12]# {message}[/size]",
+                text=message,
             )
         )
+        self.ids.scroll_view.scroll_y = 0
+

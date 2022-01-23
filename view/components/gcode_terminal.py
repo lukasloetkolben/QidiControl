@@ -42,7 +42,7 @@ class GcodeTerminal(BoxLayout):
     def append_gcode_list(self, gcode):
         self.ids.gcode_list.add_widget(
                 OneLineListItem(
-                    text=f"> {gcode}"
+                    text=f"# {gcode}"
                 )
         )
 
@@ -54,6 +54,6 @@ class GcodeTerminal(BoxLayout):
             self.append_gcode_list(text)
 
     def add_message(self, message):
-        message = f"[size=12]# {message}[/size]"
+        message = f"[size=12]> {message}[/size]"
         self.ids.gcode_list.add_widget(OneLineListItem(text=message))
         self.ids.scroll_view.scroll_y = 0

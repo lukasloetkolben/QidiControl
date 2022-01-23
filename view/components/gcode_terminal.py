@@ -12,11 +12,12 @@ Builder.load_string('''
         id: scroll_view
         size_hint: (1,1)
         canvas.before:
-        Color:
-            rgba: app.theme_cls.bg_dark
-        Rectangle:
-            pos: self.pos
-            size: self.size
+            Color:
+                rgba: app.theme_cls.bg_dark
+            Rectangle:
+                pos: self.pos
+                size: self.size
+            
         MDList:
             id: gcode_list
             pos_hint: {'top':1}

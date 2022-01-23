@@ -55,15 +55,12 @@ class QidiPrinter():
             self.socket.sendto(new_command, (self.ip, self.port))
             data, address = self.socket.recvfrom(1280)
             message = data.decode('utf-8')
-            print(message)
             self.socket.settimeout(5)
             if self.main_screen is not None:
                 self.main_screen.add_terminal_message(message)
             return message
         except Exception:
             traceback.print_exc()
-            if self.main_screen is not None:
-                self.main_screen.add_terminal_message("an error occurred!")
 
     def init_printer_config(self):
         msg = self.socket_send("M4001")

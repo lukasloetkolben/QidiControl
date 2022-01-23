@@ -1,10 +1,9 @@
 import json
 
-from kivy.app import App
 from kivy.factory import Factory
 from kivymd.app import MDApp
 
-from view.screens.main_screen import MainScreen
+from screen_manger import QidiControlScreenManger
 
 r = Factory.register
 
@@ -14,13 +13,11 @@ with open("factory_registers.json") as fd:
         for _class in _classes:
             r(_class, module=module)
 
+
 class QidiControlApp(MDApp):
 
     def build(self):
-        return MainScreen()
-
-
-
+        return QidiControlScreenManger()
 
 
 if __name__ == '__main__':

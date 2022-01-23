@@ -7,32 +7,45 @@ from pathlib import Path
 from socket import *
 from typing import cast
 
+import config
+
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+
 
 class QidiPrinter():
 
-    def __init__(self, ip):
-        self.ip = ip
+    def __init__(self):
+        self.ip = ""
         self.port = 3000
         self.socket = socket(AF_INET, SOCK_DGRAM)
         self.socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-        self.socket.setblocking(1) # note: experimental, default is 1
+        self.socket.setblocking(1)
         self.socket.settimeout(5)
 
         self.temp_gcode = Path(BASE, "temp.gcode")
         self.file_encoding = 'utf-8'
 
         if platform.system() == 'Windows':
-            self.vc_compressh = Path(BASE, '../VC_compress_gcode.exe')
+            self.vc_compress = config.GCODE_COMPRESSOR_WIN
         elif platform.system() == 'Darwin':
-            self.vc_compressh = Path(BASE, '../VC_compress_gcode_MAC')
+            self.vc_compress = config.GCODE_COMPRESSOR_MAC
         else:
             raise Exception('Operation System not supported!')
 
-        self.config = self.init_printer_config()
+        self.config = {}
+
+    def connect(self, ip):
+        try:
+            self.ip = ip
+            self.config = self.init_printer_config()
+            return True
+        except Exception:
+            return False
+
 
     def socket_send(self, cmd, t=5):
         self.socket.settimeout(t)
+        print(cmd)
         new_command = cast(str, cmd).encode(self.file_encoding, 'ignore') if type(cmd) is str else cast(bytes, cmd)
         self.socket.sendto(new_command, (self.ip, self.port))
         data, address = self.socket.recvfrom(1280)
@@ -113,7 +126,7 @@ class QidiPrinter():
         return self.socket_send(f'M28 {Path(gcode_path).name}')
 
     def write_file(self, gcode_path):
-        with open(gcode_path + ".tz", 'rb') as fp:
+        with open(Path(config.GCODE_TEMP_PATH, Path(gcode_path).name + ".tz"), 'rb') as fp:
             while True:
                 seekPos = fp.tell()
                 chunk = fp.read(1280)
@@ -186,11 +199,11 @@ class QidiPrinter():
         self.set_relative_positioning()
         self.socket_send(f"G0 Y{-1 * amount} F{speed}", t=60)
 
-    def move_up(self,  amount=10, speed=1500):
+    def move_up(self, amount=10, speed=1500):
         self.set_relative_positioning()
         self.socket_send(f"G0 Z{amount} F{speed}", t=60)
 
-    def move_down(self,  amount=10, speed=1500):
+    def move_down(self, amount=10, speed=1500):
         self.set_relative_positioning()
         self.socket_send(f"G0 Z{-1 * amount} F{speed}", t=60)
 
@@ -201,10 +214,10 @@ class QidiPrinter():
         self.socket_send(command, t=None)
 
     def compress_gcode(self, gcode_path):
-        config = self.config
-        cmd = f'"{os.path.normpath(self.vc_compressh)}" "{gcode_path}" {config["x_mm_step"]} ' \
-              f'{config["y_mm_step"]} {config["z_mm_step"]} {config["e_mm_step"]} {BASE} {config["s_x_max"]}' \
-              f' {config["s_y_max"]} {config["s_z_max"]} {config["s_machine_type"]}'
+        cfg = self.config
+        cmd = f'"{os.path.normpath(self.vc_compress)}" "{gcode_path}" {cfg["x_mm_step"]} ' \
+              f'{cfg["y_mm_step"]} {cfg["z_mm_step"]} {cfg["e_mm_step"]} {config.GCODE_TEMP_PATH} ' \
+              f'{cfg["s_x_max"]} {cfg["s_y_max"]} {cfg["s_z_max"]} {cfg["s_machine_type"]}'
         print(cmd)
         _ = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
 

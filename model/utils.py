@@ -1,11 +1,11 @@
 from socket import *
 
 
-def search_printer():
+def search_printer(retries=100):
     pc_ip = gethostbyname(gethostname())
     timeout = 0
 
-    while True:
+    for _ in range(retries):
         timeout += 0.02
         if timeout >= 0.5:
             timeout = 0.02
@@ -22,3 +22,5 @@ def search_printer():
                     return printer_ip
             except Exception:
                 continue
+
+    return None

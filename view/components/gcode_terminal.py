@@ -2,7 +2,6 @@ from kivy.lang import Builder
 
 from kivy.properties import ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
 from kivymd.uix.list import OneLineListItem
 
 Builder.load_string('''
@@ -56,10 +55,5 @@ class GcodeTerminal(BoxLayout):
 
     def add_message(self, message):
         message = f"[size=12]# {message}[/size]"
-        self.ids.gcode_list.add_widget(
-            OneLineListItem(
-                text=message,
-            )
-        )
+        self.ids.gcode_list.add_widget(OneLineListItem(text=message))
         self.ids.scroll_view.scroll_y = 0
-

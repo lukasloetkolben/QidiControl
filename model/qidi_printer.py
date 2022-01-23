@@ -3,7 +3,9 @@ import platform
 import socket
 import struct
 import subprocess
+import threading
 import time
+import traceback
 from pathlib import Path
 from socket import *
 from typing import cast
@@ -36,6 +38,8 @@ class QidiPrinter():
 
         self.config = {}
 
+        self.main_screen = None
+
     def connect(self, ip):
         try:
             self.ip = ip
@@ -44,18 +48,25 @@ class QidiPrinter():
         except Exception:
             return False
 
-
     def socket_send(self, cmd, t=5):
-        self.socket.settimeout(t)
-        print(cmd)
-        new_command = cast(str, cmd).encode(self.file_encoding, 'ignore') if type(cmd) is str else cast(bytes, cmd)
-        self.socket.sendto(new_command, (self.ip, self.port))
-        data, address = self.socket.recvfrom(1280)
-        self.socket.settimeout(5)
-        return data.decode('utf-8')
+        try:
+            self.socket.settimeout(t)
+            new_command = cast(str, cmd).encode(self.file_encoding, 'ignore') if type(cmd) is str else cast(bytes, cmd)
+            self.socket.sendto(new_command, (self.ip, self.port))
+            data, address = self.socket.recvfrom(1280)
+            message = data.decode('utf-8')
+            print(message)
+            self.socket.settimeout(5)
+            if self.main_screen is not None:
+                self.main_screen.add_terminal_message(message)
+            return message
+        except Exception:
+            traceback.print_exc()
+            if self.main_screen is not None:
+                self.main_screen.add_terminal_message("an error occurred!")
 
     def init_printer_config(self):
-        msg = self.send_gcode_command("M4001")
+        msg = self.socket_send("M4001")
         msg = msg.rstrip()
         msgs = msg.split(' ')
         config = {}
@@ -84,7 +95,7 @@ class QidiPrinter():
         return config
 
     def is_available(self, t=5):
-        return "x_mm_step" in self.send_gcode_command("M4001", t=t)
+        return "x_mm_step" in self.socket_send("M4001", t=t)
 
     def add_check_sum(self, data, seekPos):
         seek_array = struct.pack('>I', seekPos)
@@ -125,7 +136,7 @@ class QidiPrinter():
         return self.socket_send(data)
 
     def write_file_start(self, gcode_path):
-        return self.send_gcode_command(f'M28 {Path(gcode_path).name}')
+        return self.socket_send(f'M28 {Path(gcode_path).name}')
 
     def write_file(self, gcode_path):
         with open(Path(config.GCODE_TEMP_PATH, Path(gcode_path).name + ".tz"), 'rb') as fp:
@@ -139,15 +150,34 @@ class QidiPrinter():
         fp.close()
 
     def write_file_end(self, gcode_path):
-        return self.send_gcode_command(f"M29 {Path(gcode_path).name}")
+        return self.socket_send(f"M29 {Path(gcode_path).name}")
 
     def upload_gcode(self, gcode_path, start_print=False):
-        self.compress_gcode(gcode_path)
-        self.write_file_start(gcode_path)
-        self.write_file(gcode_path)
-        self.write_file_end(gcode_path)
-        if start_print:
-            self.start_print(Path(gcode_path).name)
+        threading.Thread(target=self.start_upload_gcode, args=(gcode_path, start_print,)).start()
+
+    def start_upload_gcode(self, gcode_path, start_print):
+        try:
+            self.compress_gcode(gcode_path)
+            self.write_file_start(gcode_path)
+            self.write_file(gcode_path)
+            self.write_file_end(gcode_path)
+            if start_print:
+                self.start_print(Path(gcode_path).name)
+        except Exception:
+            return None
+
+    def compress_gcode(self, gcode_path):
+        delete_temp_folder()
+        cfg = self.config
+        cmd = f'"{os.path.normpath(self.vc_compress)}" "{gcode_path}" {cfg["x_mm_step"]} ' \
+              f'{cfg["y_mm_step"]} {cfg["z_mm_step"]} {cfg["e_mm_step"]} {config.GCODE_TEMP_PATH} ' \
+              f'{cfg["s_x_max"]} {cfg["s_y_max"]} {cfg["s_z_max"]} {cfg["s_machine_type"]}'
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        p.communicate()
+        time.sleep(2)
+        return os.path.exists(f"{self.temp_gcode}.tz")
+
+    ############ GCODE ############
 
     def get_current_position(self):
         return self.send_gcode_command('M114')
@@ -222,18 +252,4 @@ class QidiPrinter():
         self.send_gcode_command("G91")
 
     def send_gcode_command(self, command, t=None):
-        try:
-            return self.socket_send(command, t=t)
-        except Exception:
-            return False
-
-    def compress_gcode(self, gcode_path):
-        delete_temp_folder()
-        cfg = self.config
-        cmd = f'"{os.path.normpath(self.vc_compress)}" "{gcode_path}" {cfg["x_mm_step"]} ' \
-              f'{cfg["y_mm_step"]} {cfg["z_mm_step"]} {cfg["e_mm_step"]} {config.GCODE_TEMP_PATH} ' \
-              f'{cfg["s_x_max"]} {cfg["s_y_max"]} {cfg["s_z_max"]} {cfg["s_machine_type"]}'
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-        p.communicate()
-        time.sleep(2)
-        return os.path.exists(f"{self.temp_gcode}.tz")
+        threading.Thread(target=self.socket_send, args=(command, t,)).start()

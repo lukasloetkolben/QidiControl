@@ -57,6 +57,7 @@ class MainScreen(Screen):
         self.printer = None
 
     def on_pre_enter(self):
+        self.printer.main_screen = self
         self.ids.control_panel.printer = self.printer
         self.ids.gcode_terminal.printer = self.printer
 
@@ -69,3 +70,7 @@ class MainScreen(Screen):
     def goto_main_screen(self):
         self.manager.transition.direction = "down"
         self.manager.current = "main_screen"
+
+    def add_terminal_message(self, message):
+        self.ids.gcode_terminal.add_message(message)
+

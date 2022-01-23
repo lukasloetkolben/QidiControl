@@ -1,8 +1,6 @@
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.list import OneLineListItem
 
 Builder.load_string('''
@@ -45,16 +43,18 @@ class GcodeTerminal(BoxLayout):
                 OneLineListItem(
                     text=f"> {gcode}"
                 )
-            )
+        )
 
     def send_gcode(self):
         text = self.ids.gcode_input.text.strip()
         if text:
-            self.printer.send_gcode_command(text)#
+            self.printer.send_gcode_command(text)  #
             self.ids.gcode_input.text = ""
             self.append_gcode_list(text)
 
-
-
-
-
+    def add_message(self, message):
+        self.ids.gcode_list.add_widget(
+            OneLineListItem(
+                text=f"# {message}"
+            )
+        )

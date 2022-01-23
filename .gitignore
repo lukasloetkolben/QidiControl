@@ -1,3 +1,5 @@
 *.gcode
 *.gcode.tz
 test.py
+search_icons.py
+.idea

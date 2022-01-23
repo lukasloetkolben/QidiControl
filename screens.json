@@ -1,0 +1,6 @@
+{
+  "from view.screens.main_screen import MainScreen": {
+    "screen_name": "main_screen",
+    "factory": "Factory.MainScreen()"
+  }
+}

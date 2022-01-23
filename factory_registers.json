@@ -1,0 +1,8 @@
+{
+  "view.components.textfield": [
+    "TextFieldRound"
+  ],
+  "view.components.control_panel": [
+    "ControlPanel"
+  ]
+}

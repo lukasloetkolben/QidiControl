@@ -1,15 +1,13 @@
 import os
+import platform
 import socket
 import struct
 import subprocess
-import time
 from pathlib import Path
-from typing import cast
-import platform
 from socket import *
+from typing import cast
 
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-
 
 class QidiPrinter():
 
@@ -25,19 +23,20 @@ class QidiPrinter():
         self.file_encoding = 'utf-8'
 
         if platform.system() == 'Windows':
-            self.vc_compressh = Path(BASE, 'VC_compress_gcode.exe')
+            self.vc_compressh = Path(BASE, '../VC_compress_gcode.exe')
         elif platform.system() == 'Darwin':
-            self.vc_compressh = Path(BASE, 'VC_compress_gcode_MAC')
+            self.vc_compressh = Path(BASE, '../VC_compress_gcode_MAC')
         else:
             raise Exception('Operation System not supported!')
 
         self.config = self.init_printer_config()
 
-    def socket_send(self, cmd):
+    def socket_send(self, cmd, t=5):
+        self.socket.settimeout(t)
         new_command = cast(str, cmd).encode(self.file_encoding, 'ignore') if type(cmd) is str else cast(bytes, cmd)
-        print(new_command)
         self.socket.sendto(new_command, (self.ip, self.port))
         data, address = self.socket.recvfrom(1280)
+        self.socket.settimeout(5)
         return data.decode('utf-8')
 
     def init_printer_config(self):
@@ -69,6 +68,8 @@ class QidiPrinter():
                     self.file_encoding = value.replace("'", '')
         return config
 
+    def is_available(self, t=5):
+        return "x_mm_step" in self.socket_send("M4001", t=t)
 
     def add_check_sum(self, data, seekPos):
         seek_array = struct.pack('>I', seekPos)
@@ -133,8 +134,14 @@ class QidiPrinter():
         if start_print:
             self.start_print(Path(gcode_path).name)
 
-    def get_print_progress(self):
-        return self.socket_send('M27')
+    def get_current_position(self):
+        return self.socket_send('M114')
+
+    def get_firmware_info(self):
+        return self.socket_send('M115')
+
+    def printer_turn_off(self):
+        self.socket_send('M4003')
 
     def start_print(self, gcode):
         self.socket_send(f'M6030 ":{gcode}" I1')
@@ -148,8 +155,50 @@ class QidiPrinter():
     def cancel_print(self):
         self.socket_send("M33")
 
-    def home_printer(self):
-        self.socket_send("G28")
+    def home_all(self):
+        self.socket_send("G28", t=60)
+
+    def home_x(self):
+        self.socket_send("G28 X", t=60)
+
+    def home_y(self):
+        self.socket_send("G28 Y", t=60)
+
+    def home_z(self):
+        self.socket_send("G28 Z", t=60)
+
+    def home_xy(self):
+        self.socket_send("G28 X Y", t=60)
+
+    def move_left(self, amount=10, speed=1500):
+        self.set_relative_positioning()
+        self.socket_send(f"G0 X{-1 * amount} F{speed}", t=60)
+
+    def move_right(self, amount=10, speed=1500):
+        self.set_relative_positioning()
+        self.socket_send(f"G0 X{amount} F{speed}", t=60)
+
+    def move_back(self, amount=10, speed=1500):
+        self.set_relative_positioning()
+        self.socket_send(f"G0 Y{amount} F{speed}", t=60)
+
+    def move_front(self, amount=10, speed=1500):
+        self.set_relative_positioning()
+        self.socket_send(f"G0 Y{-1 * amount} F{speed}", t=60)
+
+    def move_up(self,  amount=10, speed=1500):
+        self.set_relative_positioning()
+        self.socket_send(f"G0 Z{amount} F{speed}", t=60)
+
+    def move_down(self,  amount=10, speed=1500):
+        self.set_relative_positioning()
+        self.socket_send(f"G0 Z{-1 * amount} F{speed}", t=60)
+
+    def set_relative_positioning(self):
+        self.socket_send("G91")
+
+    def send_gcode_command(self, command):
+        self.socket_send(command, t=None)
 
     def compress_gcode(self, gcode_path):
         config = self.config

@@ -156,6 +156,12 @@ class QidiPrinter():
     def printer_shutdown(self):
         self.socket_send('M4003')
 
+    def printer_light_off(self):
+        self.socket_send('M107 T-3')
+
+    def printer_light_on(self):
+        self.socket_send('M106 S255 T-3')
+
     def printer_emergency_stop(self):
         self.socket_send('M112')
 
